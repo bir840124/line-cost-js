@@ -1,8 +1,11 @@
+const dateFormat = require('dateformat');
+
 /** Message */
 class MessageClass {
-    constructor(bot, JianMiaubot) {
+    constructor(bot, JianMiaubot, Tools_MYSQLDB) {
         this.bot = bot;
         this.JianMiaubot = JianMiaubot;
+        this.Tools_MYSQLDB = Tools_MYSQLDB;
     }
 
     Message(event) {
@@ -76,12 +79,13 @@ class MessageClass {
         let userId = event.source.userId;
         let replyMsg = event.message.text;
         let displayName = "";
+        let datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
         let profile = await this.bot.getUserProfile(userId);
         if (profile) {
             displayName = profile.displayName;
         }
         // JianMiau特別功能
-        if (userId === process.env.toJianMiau || userId === process.env.toZhuHan) {
+        if (userId === process.env.toZhuHantoJianMiau || userId === process.env.toZhuHantoZhuHan) {
             /** 訊息 */
             let Msg = event.message.text.split(" ");
 
@@ -112,18 +116,54 @@ class MessageClass {
                             // 當訊息回傳失敗後的處理
                         });
                     }
-                    break;
+                    return;
                 }
 
                 default: {
-                    // 使用event.reply(要回傳的訊息)方法可將訊息回傳給使用者
-                    event.reply(replyMsg).then(function (data) {
-                        // 當訊息成功回傳後的處理
-                    }).catch(function (error) {
-                        // 當訊息回傳失敗後的處理
-                    });
+                    let Query = `SELECT * FROM \`line-cost-status\` WHERE \`userId\` = '${userId}' LIMIT 1;`;
+                    let res_Query = await this.Tools_MYSQLDB.Query(Query);
+                    let Data = res_Query;
+                    let Status = Data[0]['Status'];
+                    switch (Status) {
+                        case "Love_Pig_QA OK": {
+                            let Extra = JSON.parse(Data[0]["Extra"]);
+                            let answer = false;
+                            let keyword = Extra["keyword"].split(",");
+                            for (let i = 0; i < keyword.length; i++) {
+                                if (!keyword[i] || event.message.text.indexOf(keyword[i]) !== -1) {
+                                    answer = true;
+                                }
+                            }
+                            if (answer) {
+                                replyMsg = "答對, 答案就是:";
+                            } else {
+                                replyMsg = "答錯, 正確答案是:";
+                            }
+                            replyMsg += "\n" + Extra["answer"];
+                            Query = `UPDATE \`line-cost-status\` SET \`datetime\`='${datetime}', \`Status\`='', \`Extra\`='' WHERE (\`userId\`='${userId}');`;
+                            res_Query = await this.Tools_MYSQLDB.Query(Query);
+                            event.reply(replyMsg).then(function (data) {
+                                // 當訊息成功回傳後的處理
+                            }).catch(function (error) {
+                                // 當訊息回傳失敗後的處理
+                            });
+                            return;
+                        }
+
+                        default:
+                            break;
+                    }
                     break;
                 }
+            }
+            if (replyMsg !== "") {
+                replyMsg = event.message.text;
+                // 使用event.reply(要回傳的訊息)方法可將訊息回傳給使用者
+                event.reply(replyMsg).then(function (data) {
+                    // 當訊息成功回傳後的處理
+                }).catch(function (error) {
+                    // 當訊息回傳失敗後的處理
+                });
             }
         }
     }

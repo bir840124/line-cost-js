@@ -3,11 +3,10 @@
 // Debug node --inspect=192.168.168.15:9229 app.js
 
 require('dotenv').config()
+// require("./plug/DateFormat");
 // 引用linebot SDK
 var linebot = require('linebot');
 const fs = require('fs');
-const express = require('express');
-const app = express();
 
 //讀取憑證及金鑰
 const prikey = fs.readFileSync('privkey.pem', 'utf8');
@@ -33,8 +32,15 @@ var JianMiaubot = linebot({
   channelAccessToken: process.env.channelAccessToken
 });
 
-const MessageClass = require('./MessageClass')
-const Message = new MessageClass(bot, JianMiaubot);
+const Tools_MYSQLDBClass = require('./Tools_MYSQLDBClass');
+const MessageClass = require('./MessageClass');
+
+const Tools_MYSQLDB = new Tools_MYSQLDBClass();
+const Message = new MessageClass(bot, JianMiaubot, Tools_MYSQLDB);
+
+// Bot所監聽的webhook路徑與port
+const path = process.env.URLPATH || "/";
+const port = process.env.PORT || 3001;
 
 // 當有人傳送訊息給Bot時
 bot.on('event', function (event) {
@@ -57,10 +63,8 @@ bot.on('event', function (event) {
       break;
   }
 });
-
-// Bot所監聽的webhook路徑與port
-const port = process.env.PORT || 3000;
-bot.listen('/linewebhook', port, credentials, function () {
+bot.listen(path, port, credentials, function () {
   console.log(`listening on ${port}`);
   console.log('[BOT已準備就緒]');
+  // Tools_MYSQLDB.readData();
 });
