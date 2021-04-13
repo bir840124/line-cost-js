@@ -18,7 +18,7 @@ class Tools_MYSQLDBClass {
                     throw err;
                 }
                 else {
-                    console.log("Connection established.");
+                    console.log("jianmiau.tk Connect.");
                 }
             });
     }

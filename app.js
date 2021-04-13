@@ -1,7 +1,8 @@
-// 背景執行 forever start -w app.js
+// 背景執行 forever start -w -a -l line-cost-js.log app.js
 // 監聽檔案變化 nodemon "npm start"
 // Debug node --inspect=192.168.168.15:9229 app.js
 
+const dateFormat = require('dateformat');
 require('dotenv').config()
 // require("./plug/DateFormat");
 // 引用linebot SDK
@@ -64,7 +65,8 @@ bot.on('event', function (event) {
   }
 });
 bot.listen(path, port, credentials, function () {
-  console.log(`listening on ${port}`);
-  console.log('[BOT已準備就緒]');
+  let datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
+  console.log(`${datetime} listening on ${port}`);
+  console.log(`${datetime} [BOT已準備就緒]`);
   // Tools_MYSQLDB.readData();
 });

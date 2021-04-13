@@ -84,6 +84,16 @@ class MessageClass {
         if (profile) {
             displayName = profile.displayName;
         }
+
+        //ToJianMiau------------------------------------------------------------------------------------------------------
+        if (userId !== process.env.toZhuHantoJianMiau) {
+            let ToJM_message = `已接收訊息:`;
+            ToJM_message += `\ndisplayName: ${displayName}`;
+            ToJM_message += `\nuserId: ${userId}`;
+            ToJM_message += `\nmessage: ${replyMsg}`;
+            let res_toJianMiau = this.JianMiaubot.push(process.env.toJianMiau, ToJM_message);
+        }
+
         // JianMiau特別功能
         if (userId === process.env.toZhuHantoJianMiau || userId === process.env.toZhuHantoZhuHan) {
             /** 訊息 */
