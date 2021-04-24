@@ -1,6 +1,7 @@
-// 背景執行 forever start -w -a -l line-cost-js.log app.js
-// 監聽檔案變化 nodemon "npm start"
-// Debug node --inspect=192.168.168.15:9229 app.js
+// 背景執行 forever start -a -l line-cost-js.log app.js
+// npm start
+// npm run dev
+// Debug nodemon --inspect=192.168.168.15:9229 app.js
 
 const dateFormat = require('dateformat');
 require('dotenv').config()
@@ -33,40 +34,42 @@ var JianMiaubot = linebot({
   channelAccessToken: process.env.channelAccessToken
 });
 
-const Tools_MYSQLDBClass = require('./Tools_MYSQLDBClass');
-const MessageClass = require('./MessageClass');
-
-const Tools_MYSQLDB = new Tools_MYSQLDBClass();
-const Message = new MessageClass(bot, JianMiaubot, Tools_MYSQLDB);
+const LineBotAPI = require('./LineBotClass');
 
 // Bot所監聽的webhook路徑與port
 const path = process.env.URLPATH || "/";
 const port = process.env.PORT || 3001;
 
-// 當有人傳送訊息給Bot時
-bot.on('event', function (event) {
-  switch (event.type) {
-    case 'message': {
-      Message.Message(event);
-      break;
-    }
+new LineBotAPI(path, port, credentials, bot, JianMiaubot);
 
-    case 'join':
-    case 'leave':
-    case 'follow':
-    case 'unfollow':
-    case 'memberJoin':
-    case 'memberLeave':
-    case 'postback':
-    case 'accountLink':
-    case 'fallback':
-    default:
-      break;
-  }
-});
-bot.listen(path, port, credentials, function () {
-  let datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
-  console.log(`${datetime} listening on ${port}`);
-  console.log(`${datetime} [BOT已準備就緒]`);
-  // Tools_MYSQLDB.readData();
-});
+// // 當有人傳送訊息給Bot時
+// bot.on('event', function (event) {
+//   switch (event.type) {
+//     case 'message': {
+//       Message.Message(event);
+//       break;
+//     }
+
+//     case 'postback': {
+//       Postback.Postback(this, event);
+//       break;
+//     }
+
+//     case 'join':
+//     case 'leave':
+//     case 'follow':
+//     case 'unfollow':
+//     case 'memberJoin':
+//     case 'memberLeave':
+//     case 'accountLink':
+//     case 'fallback':
+//     default:
+//       break;
+//   }
+// });
+// bot.listen(path, port, credentials, function () {
+//   let datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
+//   console.log(`${datetime} listening on ${port}`);
+//   console.log(`${datetime} [BOT已準備就緒]`);
+//   // Tools_MYSQLDB.readData();
+// });

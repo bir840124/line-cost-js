@@ -1,5 +1,5 @@
 {
-  "name": "line-bot-js",
+  "name": "line-cost-js",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -8,13 +8,16 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "linebot": "^1.6.1",
-    "mysql": "^2.18.1"
+    "mysql": "^2.18.1",
+    "node-schedule": "^2.0.0",
+    "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.7"
   },
   "scripts": {
-    "start": "node --inspect=192.168.168.15:9229 app.js"
+    "start": "forever start -a -l line-cost-js.log app.js",
+    "dev": "nodemon --inspect=127.0.0.1:9229 app.js"
   },
   "keywords": [],
   "author": "",

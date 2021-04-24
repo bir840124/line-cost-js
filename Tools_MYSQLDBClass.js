@@ -1,8 +1,10 @@
 const mysql = require('mysql');
+const dateFormat = require('dateformat');
 
 /** Tools_MYSQLDB */
 class Tools_MYSQLDBClass {
     constructor() {
+        let datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
         let config = {
             host: 'jianmiau.tk',
             user: 'jianmiau',
@@ -14,11 +16,11 @@ class Tools_MYSQLDBClass {
         this.conn.connect(
             function (err) {
                 if (err) {
-                    console.log("!!! Cannot connect !!! Error:");
+                    console.log(`${datetime} !!! Cannot connect !!! Error:`);
                     throw err;
                 }
                 else {
-                    console.log("jianmiau.tk Connect.");
+                    console.log(`${datetime} jianmiau.tk Connect.`);
                 }
             });
     }
@@ -39,7 +41,7 @@ class Tools_MYSQLDBClass {
         this.conn.end(
             function (err) {
                 if (err) throw err;
-                else console.log('Closing connection.')
+                else console.log(`${datetime} Closing connection.`)
             });
     }
 

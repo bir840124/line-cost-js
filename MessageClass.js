@@ -1,11 +1,21 @@
 const dateFormat = require('dateformat');
+const { decode } = require('querystring');
 
 /** Message */
 class MessageClass {
-    constructor(bot, JianMiaubot, Tools_MYSQLDB) {
-        this.bot = bot;
-        this.JianMiaubot = JianMiaubot;
-        this.Tools_MYSQLDB = Tools_MYSQLDB;
+    constructor(app) {
+        this.app = app;
+        // this.app.CPBL.AddTime({
+        //     game_id: 64,
+        //     cpbldata: {
+        //         "http://www.cpbl.com.tw/games/play_by_play.html?": "",
+        //         game_type: "01",
+        //         game_id: "63",
+        //         game_date: "2021-04-20",
+        //         pbyear: "2021",
+        //     },
+        //     LineID: 1
+        // });
     }
 
     Message(event) {
@@ -45,7 +55,7 @@ class MessageClass {
             case "user": {
                 let userId = event.source.userId;
                 let displayName = "";
-                let profile = await this.bot.getUserProfile(userId);
+                let profile = await this.app.bot.getUserProfile(userId);
                 if (profile) {
                     displayName = profile.displayName;
                 }
@@ -54,10 +64,10 @@ class MessageClass {
                 //ToJianMiau------------------------------------------------------------------------------------------------------
                 if (userId !== process.env.toZhuHantoJianMiau) {
                     let ToJM_message = "已接收訊息:";
-                    ToJM_message += "\ndisplayName: $displayName";
-                    ToJM_message += "\nuserId: $userId";
+                    ToJM_message += `\ndisplayName: ${displayName}`;
+                    ToJM_message += `\nuserId: ${userId}`;
                     ToJM_message += "\n" + replyMsg;
-                    let res_toJianMiau = this.JianMiaubot.push(process.env.toJianMiau, ToJM_message);
+                    let res_toJianMiau = this.app.JianMiaubot.push(process.env.toJianMiau, ToJM_message);
                 }
                 let res_reply = event.reply(replyMsg).then(function (data) {
                     // 當訊息成功回傳後的處理
@@ -80,7 +90,7 @@ class MessageClass {
         let replyMsg = event.message.text;
         let displayName = "";
         let datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
-        let profile = await this.bot.getUserProfile(userId);
+        let profile = await this.app.bot.getUserProfile(userId);
         if (profile) {
             displayName = profile.displayName;
         }
@@ -91,7 +101,7 @@ class MessageClass {
             ToJM_message += `\ndisplayName: ${displayName}`;
             ToJM_message += `\nuserId: ${userId}`;
             ToJM_message += `\nmessage: ${replyMsg}`;
-            let res_toJianMiau = this.JianMiaubot.push(process.env.toJianMiau, ToJM_message);
+            let res_toJianMiau = this.app.JianMiaubot.push(process.env.toJianMiau, ToJM_message);
         }
 
         // JianMiau特別功能
@@ -115,7 +125,7 @@ class MessageClass {
                         for (let i = 2; i < Msg.length; i++) {
                             replyMsg += Msg[i] + (i === Msg.length - 1 ? "" : " ");
                         }
-                        let res_Msg = this.bot.push(Msg[1], replyMsg);
+                        let res_Msg = this.app.bot.push(Msg[1], replyMsg);
 
                         let ToJM_message = "已發送訊息:";
                         ToJM_message += `\nuserId: ${Msg[1]}`;
@@ -129,9 +139,35 @@ class MessageClass {
                     return;
                 }
 
+                case "中職": {
+                    let URL = Msg[1];
+                    let Isplay_by_play = URL.indexOf("play_by_play");
+                    let data = decode(URL);
+                    if (Isplay_by_play === -1 || !data["game_id"]) {
+                        return;
+                    }
+                    this.app.CPBL.AddTime({
+                        game_id: data["game_id"],
+                        cpbldata: data,
+                        LineID: userId
+                    }, event);
+                    return;
+                }
+
+                case "今日賽事":
+                case "我愛建喵今日賽事": {
+                    let columns = await this.app.CPBL.GetCPBLList(Msg[1] ? Msg[1] : dateFormat(new Date(), "yyyymmdd"));
+                    let res_reply = event.replyimagemap("建喵也愛你", columns).then(function (data) {
+                        // 當訊息成功回傳後的處理
+                    }).catch(function (error) {
+                        // 當訊息回傳失敗後的處理
+                    });
+                    return;
+                }
+
                 default: {
                     let Query = `SELECT * FROM \`line-cost-status\` WHERE \`userId\` = '${userId}' LIMIT 1;`;
-                    let res_Query = await this.Tools_MYSQLDB.Query(Query);
+                    let res_Query = await this.app.Tools_MYSQLDB.Query(Query);
                     let Data = res_Query;
                     let Status = Data[0]['Status'];
                     switch (Status) {
@@ -151,12 +187,32 @@ class MessageClass {
                             }
                             replyMsg += "\n" + Extra["answer"];
                             Query = `UPDATE \`line-cost-status\` SET \`datetime\`='${datetime}', \`Status\`='', \`Extra\`='' WHERE (\`userId\`='${userId}');`;
-                            res_Query = await this.Tools_MYSQLDB.Query(Query);
+                            res_Query = await this.app.Tools_MYSQLDB.Query(Query);
                             event.reply(replyMsg).then(function (data) {
                                 // 當訊息成功回傳後的處理
                             }).catch(function (error) {
                                 // 當訊息回傳失敗後的處理
                             });
+                            return;
+                        }
+
+                        case "CPBL RUN": {
+                            switch (Instruction) {
+                                case "停止": {
+                                    replyMsg = "已停止中職轉播功能";
+                                    Query = `UPDATE \`line-cost-status\` SET \`datetime\`='${datetime}', \`Status\`='', \`Extra\`='' WHERE (\`userId\`='${userId}');`;
+                                    res_Query = await this.app.Tools_MYSQLDB.Query(Query);
+                                    event.reply(replyMsg).then(function (data) {
+                                        // 當訊息成功回傳後的處理
+                                    }).catch(function (error) {
+                                        // 當訊息回傳失敗後的處理
+                                    });
+                                    break;
+                                }
+
+                                default:
+                                    break;
+                            }
                             return;
                         }
 
@@ -166,15 +222,15 @@ class MessageClass {
                     break;
                 }
             }
-            if (replyMsg !== "") {
-                replyMsg = event.message.text;
-                // 使用event.reply(要回傳的訊息)方法可將訊息回傳給使用者
-                event.reply(replyMsg).then(function (data) {
-                    // 當訊息成功回傳後的處理
-                }).catch(function (error) {
-                    // 當訊息回傳失敗後的處理
-                });
-            }
+        }
+        if (replyMsg !== "") {
+            replyMsg = event.message.text;
+            // 使用event.reply(要回傳的訊息)方法可將訊息回傳給使用者
+            event.reply(replyMsg).then(function (data) {
+                // 當訊息成功回傳後的處理
+            }).catch(function (error) {
+                // 當訊息回傳失敗後的處理
+            });
         }
     }
 }
