@@ -157,11 +157,22 @@ class MessageClass {
                 case "今日賽事":
                 case "我愛建喵今日賽事": {
                     let columns = await this.app.CPBL.GetCPBLList(Msg[1] ? Msg[1] : dateFormat(new Date(), "yyyymmdd"));
-                    let res_reply = event.replyimagemap("建喵也愛你", columns).then(function (data) {
-                        // 當訊息成功回傳後的處理
-                    }).catch(function (error) {
-                        // 當訊息回傳失敗後的處理
-                    });
+                    if (columns.length > 0) {
+                        let res_reply = event.replyimagemap("建喵也愛你", columns).then(function (data) {
+                            // 當訊息成功回傳後的處理
+                        }).catch(function (error) {
+                            // 當訊息回傳失敗後的處理
+                        });
+                    } else {
+                        replyMsg = "今天沒有比賽";
+                        event.reply(replyMsg)
+                            .then(function (data) {
+                                // 當訊息成功回傳後的處理
+                            })
+                            .catch(function (error) {
+                                // 當訊息回傳失敗後的處理
+                            });
+                    }
                     return;
                 }
 

@@ -1,4 +1,5 @@
 // 背景執行 forever start -a -l line-cost-js.log app.js
+// 重新背景執行 forever restart -a -l line-cost-js.log app.js
 // npm start
 // npm run dev
 // Debug nodemon --inspect=192.168.168.15:9229 app.js
